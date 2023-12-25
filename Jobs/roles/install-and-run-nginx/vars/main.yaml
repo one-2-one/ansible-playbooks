@@ -1,0 +1,9 @@
+---
+packages:
+  - nginx
+  - java-11-openjdk
+aptcachetime: 3600
+app_dir: /opt/sample
+app_file: service.jar
+app_port: 8080
+ansible_user_id: 1000

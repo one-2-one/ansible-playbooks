@@ -1,0 +1,11 @@
+- hosts: app
+  tasks:
+    - name: add sudoers
+      blockinfile: 
+        state: present
+        insertafter: EOF
+        dest: /etc/sudoers
+        marker: "#scom update"
+        content: |
+          scom ALL=(root) NOPASSWD: /bin/sh -c sh /tmp/scx-scom/scx-1.[5-9].[0-9][0-9]-[0-9].universal[[\:alpha\:]].[[\:digit\:]].x[6-8][4-6].sh --install --enable-opsmgr; EC=$?; cd /tmp; rm -rf /tmp/scx-scom; exit $EC
+          scom ALL=(root) NOPASSWD: /bin/sh -c sh /tmp/scx-scom/scx-1.[5-9].[0-9][0-9]-[0-9].universal[[\:alpha\:]].[[\:digit\:]].x[6-8][4-6].sh --upgrade --enable-opsmgr; EC=$?; cd /tmp; rm -rf /tmp/scx-scom; exit $EC

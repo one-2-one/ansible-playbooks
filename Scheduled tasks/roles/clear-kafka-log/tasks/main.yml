@@ -1,0 +1,12 @@
+---
+- name: collect files
+  ansible.builtin.find:
+    paths: "/home/example"
+    use_regex: true
+    patterns: "connect.log*"
+  register: collected_files
+- name: remove collected files
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  with_items: "{{ collected_files.files }}"

@@ -1,0 +1,12 @@
+- name: Disable user
+  hosts: dev 
+  become: true
+  tasks:
+    - name: disable user
+      ansible.builtin.user:
+        name: "{{ item }}"
+        state: present
+        password_lock: true
+        shell: "/sbin/nologin"
+      loop:
+        - user2

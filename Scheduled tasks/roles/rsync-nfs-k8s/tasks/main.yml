@@ -1,0 +1,19 @@
+---
+- name: Synchronization of src nifi-rtn to NFS-K8S-BACKUP
+  ansible.posix.synchronize:
+    src: /SSD/nfs
+    dest: /HDD/nfs
+    rsync_opts:
+      - "--verbose"
+      - "--acls"
+      - "--delete"
+  delegate_to: "{{ inventory_hostname }}"
+- name: Synchronization of src nifi-azure-backup to NFS-K8S-BACKUP
+  ansible.posix.synchronize:
+    src: /SSD/nfs
+    dest: /HDD/nfs
+    rsync_opts:
+      - "--verbose"
+      - "--acls"
+      - "--delete"
+  delegate_to: "{{ inventory_hostname }}"

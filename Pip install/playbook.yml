@@ -1,0 +1,9 @@
+- hosts: newhadoop
+  become: true
+  tasks:
+  - name: Install python package 
+    ansible.builtin.pip:
+      name: pyarrow==0.14.1
+    environment:
+      http_proxy: 'http://user:passwd@proxy.example.com:3128'
+      https_proxy: 'http://user:passwd@proxy.example.com:3128'

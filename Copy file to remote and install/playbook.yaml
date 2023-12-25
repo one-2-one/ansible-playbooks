@@ -1,0 +1,12 @@
+- hosts: newservers
+  tasks:
+    - name: copying file with playbook
+      become: true 
+      copy:
+        src: /Users/oburiatov/tmp/spatialindex-1.8.5-1.el7.x86_64.rpm
+        dest: /home/oburiatov 
+        mode: 0744
+    - name: Install package.
+      yum:
+        name: /home/oburiatov/spatialindex-1.8.5-1.el7.x86_64.rpm
+        state: present

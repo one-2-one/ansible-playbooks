@@ -1,0 +1,150 @@
+- hosts: k8s-2
+  # become: yes
+  tasks:
+   - name: Upgrade all packages
+     yum:
+       name: '*'
+       state: latest
+
+   - name: install yum-utils
+     yum:
+       name: yum-utils
+       state: latest
+
+   - name: Add repository
+     shell: yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+   - name: Install a list of packages with a list variable
+     yum:
+        name: "{{ packages }}"
+     vars:
+        packages:
+        - docker-ce
+        - docker-ce-cli
+        - containerd.io
+        - docker-compose-plugin
+        - vim
+        - mc
+
+   - name: start Docker
+     service:
+       name: docker
+       state: started
+       enabled: yes
+
+   - name: Replace the content of my file
+     copy:
+       src: ./docker.service
+       dest: /usr/lib/systemd/system/
+
+   - name: Ansible delete file example
+     file:
+       path: /etc/containerd/config.toml
+       state: absent
+
+   - name: reload systemd
+     command: systemctl daemon-reload
+
+   - name: restart docker
+     command: systemctl restart containerd docker.service docker.socket
+
+   - name: disable SELinux
+     command: setenforce 0
+
+   - name: disable SELinux on reboot
+     selinux:
+       state: disabled
+
+   - name: ensure net.bridge.bridge-nf-call-ip6tables is set to 1
+     sysctl:
+      name: net.bridge.bridge-nf-call-ip6tables
+      value: 1
+      state: present
+
+   - name: ensure net.bridge.bridge-nf-call-iptables is set to 1
+     sysctl:
+      name: net.bridge.bridge-nf-call-iptables
+      value: 1
+      state: present
+
+   - name: add Kubernetes' YUM repository
+     yum_repository:
+      name: Kubernetes
+      description: Kubernetes YUM repository
+      baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+      gpgkey: https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+      gpgcheck: yes
+
+   - name: Install a list of packages with a list variable
+     yum:
+        name: "{{ packages }}"
+     vars:
+        packages:
+        - kubeadm
+        - kubectl
+        - kubelet
+
+
+   - name: enable kubelet
+     service:
+       name: kubelet
+       enabled: yes
+
+- hosts: master
+  become: yes
+  tasks:
+    - name: initialize the cluster
+      shell: kubeadm init --pod-network-cidr=10.244.0.0/16 >> cluster_initialized.txt
+      args:
+        chdir: $HOME
+        creates: cluster_initialized.txt
+
+    - name: create .kube directory
+      become: yes
+      file:
+        path: $HOME/.kube
+        state: directory
+        mode: 0755
+
+    - name: copy admin.conf to user's kube config
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: $HOME/.kube/config
+        remote_src: yes
+
+    - name: install Pod network
+      become: yes
+      shell: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml >> pod_network_setup.txt
+      args:
+        chdir: $HOME
+        creates: pod_network_setup.txt
+      tags:
+      - last
+
+- hosts: master
+  become: yes
+  gather_facts: false
+  tasks:
+    - name: get join command
+      shell: kubeadm token create --print-join-command
+      register: join_command_raw
+      tags:
+      - last
+
+    - name: set join command
+      set_fact:
+        join_command: "{{ join_command_raw.stdout_lines[0] }}"
+      tags:
+      - last
+
+
+- hosts: workers
+  become: yes
+  tasks:
+    - name: join cluster
+      shell: "{{ hostvars['k8s-1'].join_command }} --ignore-preflight-errors all  >> node_joined.txt"
+      args:
+        chdir: $HOME
+        creates: node_joined.txt
+      tags:
+      - last

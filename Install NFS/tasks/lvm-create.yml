@@ -1,0 +1,26 @@
+---
+- name: make volume group
+  lvg:
+    vg: VGapp
+    state: present
+    pvs:
+      - "/dev/sda"
+
+- name: make logical volume k8s
+  lvol:
+    lv: k8s
+    vg: VGapp
+    size: "300G"
+    state: present
+
+- name: make file system for k8s
+  filesystem:
+    fstype: "xfs"
+    device: "/dev/VGapp/nfs"
+
+- name: mount lvm k8s to the /app
+  mount:
+    path: "/nfs"
+    src: "/dev/mapper/VGapp-nfs"
+    fstype: "xfs"
+    state: mounted

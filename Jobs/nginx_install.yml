@@ -1,0 +1,7 @@
+---
+- hosts: app05
+  become: yes
+  become_user: root
+  become_method: sudo
+  roles:
+    - install-and-run-nginx

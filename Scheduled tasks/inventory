@@ -1,0 +1,2 @@
+[test]
+example ansible_host=example.com

@@ -1,0 +1,58 @@
+---
+- name: add admin-users
+  user:
+   name: '{{ item.key }}'
+   comment: '{{ item.value.comment }}'
+   password: '{{ item.value.password }}'
+  loop: '{{ admin_users_list | dict2items }}'
+  when: ansible_distribution_major_version >= "6"
+
+- name: add ssh-key for admin-users
+  authorized_key:
+   user: '{{ item.key }}'
+   key:  "{{ lookup('file', 'files/{{ item.key }}') }}"
+  loop: '{{ admin_users_list | dict2items }}'
+  when: item.value.authorized_key is defined
+
+- name: drop down expire for 60 days
+  shell: "usermod -p '{{ item.value.password }}' '{{ item.key }}'"
+  loop: '{{ admin_users_list | dict2items }}'
+  when: ansible_distribution_major_version >= "6"
+
+- name: add includedir to the /etc/sudoers
+  lineinfile:
+    backup: yes
+    path: /etc/sudoers
+    line: "#includedir /etc/sudoers.d"
+    insertafter: EOF
+
+- name: create /etc/sudoers.d/ dir
+  file:
+    path: /etc/sudoers.d
+    state: directory
+    mode: "o=rwx,g=rx,o="
+
+- name: 'creat /etc/sudoers.d/{{ item.key }}'
+  file:
+    path: '/etc/sudoers.d/{{ item.key }}'
+    owner: root
+    mode: "u=r,g=r,o="
+    state: touch
+  loop: '{{ admin_users_list | dict2items }}'
+  when: item.value.root == "yes"
+
+- name: 'add sudo ALL with passwd for {{ item.key }}'
+  lineinfile:
+    path: "/etc/sudoers.d/{{ item.key }}"
+    line: "{{ item.key }} ALL=(ALL) ALL"
+    insertbefore: BOF
+  loop: '{{ admin_users_list | dict2items }}'
+  when: item.value.root == "yes"
+
+- name: 'add sudo su with no passwd for {{ item.key }}'
+  lineinfile:
+    path: "/etc/sudoers.d/{{ item.key }}"
+    line: "{{ item.key }} ALL=(ALL) NOPASSWD: /bin/su -"
+    insertafter: EOF
+  loop: '{{ admin_users_list | dict2items }}'
+  when: item.value.root == "yes"

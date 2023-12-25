@@ -1,0 +1,8 @@
+---
+- name: create /nfs
+  file:
+    path: /nfs
+    state: directory
+
+- include_tasks: lvm-create
+  when: ansible_hostname in HP

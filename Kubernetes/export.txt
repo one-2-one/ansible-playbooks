@@ -1,0 +1,2 @@
+1.  export KUBECONFIG=/home/centos/.kube/config (или изменить в ансибл-буке путь к дефолтному пути в ~/.bashrc)
+2. kubectl label node k8s-3 kubernetes.io/role=worker

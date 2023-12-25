@@ -1,0 +1,11 @@
+---
+admin_users_list:
+  exapmleuser:
+    comment: 'exapmleuser@gmail.com'
+    password: 'passwdhash'
+    authorized_key: 'yes'
+    root: 'yes'
+
+
+
+

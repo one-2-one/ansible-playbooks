@@ -1,0 +1,41 @@
+- hosts: rest_nodes
+  tasks:
+    - name: Create /tmp folder
+      ansible.builtin.file:
+        path: /tmp/qualys
+        state: directory
+        mode: '0777'
+    - name: Copy agent file from local to remote
+      ansible.builtin.copy:
+        src: /Users/oburiatov/Work/Personal/github.com/AnsiblePlaybooks/Copy_agent_and_install_qualys/Unix_x64_rpm/
+        dest: /tmp/qualys/
+        owner: root
+        group: root
+        mode: '0777'
+    - name: RPM install
+      ansible.builtin.shell: rpm -ivh --replacepkgs /tmp/qualys/QualysCloudAgent.rpm 
+    - name: Run qualys-cloud-agent.sh
+      ansible.builtin.shell: /usr/local/qualys/cloud-agent/bin/qualys-cloud-agent.sh ActivationId=xxx-xxx-xxx-xxx CustomerId=xxx-xxx-xxx-xxx
+    - name: Move Appliance-Certificate.pem
+      ansible.builtin.shell: mv /tmp/qualys/Appliance-Certificate.pem /etc/pki/ca-trust/source/anchors/
+    - name: Update-ca-trust
+      ansible.builtin.shell: update-ca-trust
+    - name: Copy qagent.config file to /etc/qualys/cloud-agent/qagent.config
+      ansible.builtin.copy: 
+        src: /tmp/qualys/qagent.config
+        dest: /etc/qualys/cloud-agent/qagent.config
+        owner: root
+        group: root
+        mode: '0777'
+        remote_src: yes
+    - name: Echo to file /etc/environment
+      ansible.builtin.shell: echo "qualys_https_proxy=http://10.1.0.1:8080" >> /etc/environment
+    - name: Restart service qualys-cloud-agent
+      ansible.builtin.systemd:
+        state: restarted
+        daemon_reload: true
+        name: qualys-cloud-agent
+
+
+
+    
